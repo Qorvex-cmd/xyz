@@ -155,6 +155,8 @@ model Service {
   estimatedPrice String
 
   bookings ServiceBooking[]
+
+  @@unique([name])
 }
 
 model ServiceBooking {

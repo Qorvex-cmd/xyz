@@ -1,10 +1,10 @@
-import { prisma } from "@/src/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
 async function getCars(searchParams: { make?: string; model?: string; q?: string; min?: string; max?: string; }) {
-  const where: any = { OR: undefined, status: "AVAILABLE" };
+  const where: any = { OR: undefined, status: { in: ["AVAILABLE", "RESERVED"] } };
   if (searchParams.make) where.make = { contains: searchParams.make, mode: "insensitive" };
   if (searchParams.model) where.model = { contains: searchParams.model, mode: "insensitive" };
   if (searchParams.q) {

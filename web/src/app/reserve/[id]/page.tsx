@@ -1,8 +1,8 @@
-import { prisma } from "@/src/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Stripe from "stripe";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/src/lib/auth";
+import { authOptions } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 

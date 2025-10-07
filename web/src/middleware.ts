@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 
 const adminRoutes = ["/admin"];
-const customerRoutes = ["/dashboard", "/reserve", "/book", "/import"];
+const customerRoutes = ["/dashboard", "/reserve", "/book"];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -31,5 +31,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/dashboard/:path*", "/reserve/:path*", "/book/:path*", "/import/:path*"],
+  matcher: ["/admin/:path*", "/dashboard/:path*", "/reserve/:path*", "/book/:path*"],
 };
