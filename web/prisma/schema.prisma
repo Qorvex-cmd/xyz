@@ -1,0 +1,190 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============ Enums ============
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+enum CarStatus {
+  AVAILABLE
+  RESERVED
+  SOLD
+}
+
+enum BookingStatus {
+  PENDING_REVIEW
+  CONFIRMED
+  COMPLETED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum ImportRequestStatus {
+  NEW
+  CONTACTED
+  IN_PROGRESS
+}
+
+// ============ NextAuth base models ============
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  emailVerified DateTime?
+  image         String?
+
+  // Business fields
+  fullName    String
+  phoneNumber String?
+  role        Role     @default(CUSTOMER)
+
+  // Relations
+  accounts         Account[]
+  sessions         Session[]
+  reservations     Reservation[]
+  serviceBookings  ServiceBooking[]
+  importRequests   ImportRequest[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Credentials auth: store password hash
+  passwordHash String
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ============ Domain models ============
+model CarListing {
+  id            String     @id @default(cuid())
+  make          String
+  model         String
+  year          Int
+  priceAud      Int        // Whole AUD amount
+  mileageKm     Int
+  vin           String
+  description   String
+  photoUrls     Json       // ["https://...", ...]
+  mainImageUrl  String
+  status        CarStatus  @default(AVAILABLE)
+
+  engineSize    String?
+  transmission  String?
+  fuelType      String?
+  specs         Json?
+
+  reservations Reservation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+}
+
+model Reservation {
+  id             String        @id @default(cuid())
+  customerId     String
+  carListingId   String
+  depositAmount  Int
+  reservationDate DateTime     @default(now())
+  paymentStatus  PaymentStatus @default(PENDING)
+  stripePaymentId String?
+
+  customer   User       @relation(fields: [customerId], references: [id])
+  carListing CarListing @relation(fields: [carListingId], references: [id])
+
+  @@index([customerId])
+  @@index([carListingId])
+}
+
+model Service {
+  id             String   @id @default(cuid())
+  name           String
+  description    String
+  estimatedPrice String
+
+  bookings ServiceBooking[]
+}
+
+model ServiceBooking {
+  id              String         @id @default(cuid())
+  customerId      String
+  serviceId       String
+  customerMessage String
+  requestedDate   DateTime
+  status          BookingStatus  @default(PENDING_REVIEW)
+
+  customer User    @relation(fields: [customerId], references: [id])
+  service  Service @relation(fields: [serviceId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([customerId])
+  @@index([serviceId])
+}
+
+model ImportRequest {
+  id              String                @id @default(cuid())
+  customerId      String
+  carDetails      String
+  estimatedBudget Int
+  additionalNotes String?
+  submissionDate  DateTime              @default(now())
+  status          ImportRequestStatus   @default(NEW)
+
+  customer User @relation(fields: [customerId], references: [id])
+
+  @@index([customerId])
+}
